@@ -22,10 +22,6 @@ var Stage = /** @class */ (function () {
         this.container.appendChild(this.renderer.domElement);
         // scene
         this.scene = new THREE.Scene();
-        const loader = new THREE.TextureLoader();
-        loader.load('/game/background.jpg', (texture) => {
-            this.scene.background = texture;
-        });
         // camera
         var aspect = window.innerWidth / window.innerHeight;
         var d = 20;
