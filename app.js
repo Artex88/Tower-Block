@@ -23,7 +23,7 @@ var Stage = /** @class */ (function () {
         // scene
         this.scene = new THREE.Scene();
         const loader = new THREE.TextureLoader();
-        loader.load('background.jpg', (texture) => {
+        loader.load('/game/background.jpg', (texture) => {
             this.scene.background = texture;
         });
         // camera
