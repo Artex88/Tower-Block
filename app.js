@@ -108,50 +108,124 @@ var Block = /** @class */ (function () {
         this.direction = this.direction > 0 ? this.speed : Math.abs(this.speed);
     };
     Block.prototype.place = function () {
+    this.state = this.STATES.STOPPED;
+
+    // Вычисляем overlap (перекрытие с предыдущим блоком)
+    var overlap = this.targetBlock.dimension[this.workingDimension] -
+                  Math.abs(this.position[this.workingPlane] - this.targetBlock.position[this.workingPlane]);
+
+    var blocksToReturn = {
+        plane: this.workingPlane,
+        direction: this.direction
+    };
+
+    // Проверка на "идеальное попадание" (бонус)
+    var epsilon = 0.5; // допустимое отклонение для бонуса
+    if (Math.abs(this.position[this.workingPlane] - this.targetBlock.position[this.workingPlane]) < epsilon) {
+        overlap = this.dimension[this.workingDimension];
+        blocksToReturn.bonus = true;
+        // Выравниваем блок точно по центру
+        this.position.x = this.targetBlock.position.x;
+        this.position.z = this.targetBlock.position.z;
+        this.dimension.width = this.targetBlock.dimension.width;
+        this.dimension.depth = this.targetBlock.dimension.depth;
+    }
+
+    if (overlap > 0) {
+        // Создаём "поставленный" блок
+        var choppedDimensions = { width: this.dimension.width, height: this.dimension.height, depth: this.dimension.depth };
+        choppedDimensions[this.workingDimension] -= overlap;
+        this.dimension[this.workingDimension] = overlap;
+
+        var placedGeometry = new THREE.BoxGeometry(this.dimension.width, this.dimension.height, this.dimension.depth);
+        placedGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(this.dimension.width / 2, this.dimension.height / 2, this.dimension.depth / 2));
+        var placedMesh = new THREE.Mesh(placedGeometry, this.material);
+
+        // Если не бонус — создаём "отрезанный" кусок
+        if (!blocksToReturn.bonus && choppedDimensions[this.workingDimension] > 0) {
+            var choppedGeometry = new THREE.BoxGeometry(choppedDimensions.width, choppedDimensions.height, choppedDimensions.depth);
+            choppedGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(choppedDimensions.width / 2, choppedDimensions.height / 2, choppedDimensions.depth / 2));
+            var choppedMesh = new THREE.Mesh(choppedGeometry, this.material);
+
+            var choppedPosition = { x: this.position.x, y: this.position.y, z: this.position.z };
+            if (this.position[this.workingPlane] < this.targetBlock.position[this.workingPlane]) {
+                this.position[this.workingPlane] = this.targetBlock.position[this.workingPlane];
+            } else {
+                choppedPosition[this.workingPlane] += overlap;
+            }
+
+            choppedMesh.position.set(choppedPosition.x, choppedPosition.y, choppedPosition.z);
+            blocksToReturn.chopped = choppedMesh;
+        }
+
+        placedMesh.position.set(this.position.x, this.position.y, this.position.z);
+        blocksToReturn.placed = placedMesh;
+
+    } else {
+        this.state = this.STATES.MISSED;
+    }
+
+    this.dimension[this.workingDimension] = overlap;
+    return blocksToReturn;
+};
+    Block.prototype.place = function () {
         this.state = this.STATES.STOPPED;
-        var overlap = this.targetBlock.dimension[this.workingDimension] - Math.abs(this.position[this.workingPlane] - this.targetBlock.position[this.workingPlane]);
+
+    
+        var overlap = this.targetBlock.dimension[this.workingDimension] -
+                  Math.abs(this.position[this.workingPlane] - this.targetBlock.position[this.workingPlane]);
+
         var blocksToReturn = {
             plane: this.workingPlane,
             direction: this.direction
         };
-        if (this.dimension[this.workingDimension] - overlap < 0.3) {
+
+        // Проверка на "идеальное попадание" (бонус)
+        var epsilon = 0.5; // допустимое отклонение для бонуса
+        if (Math.abs(this.position[this.workingPlane] - this.targetBlock.position[this.workingPlane]) < epsilon) {
             overlap = this.dimension[this.workingDimension];
             blocksToReturn.bonus = true;
+            // Выравниваем блок точно по центру
             this.position.x = this.targetBlock.position.x;
             this.position.z = this.targetBlock.position.z;
             this.dimension.width = this.targetBlock.dimension.width;
             this.dimension.depth = this.targetBlock.dimension.depth;
         }
+
         if (overlap > 0) {
+            // Создаём "поставленный" блок
             var choppedDimensions = { width: this.dimension.width, height: this.dimension.height, depth: this.dimension.depth };
             choppedDimensions[this.workingDimension] -= overlap;
             this.dimension[this.workingDimension] = overlap;
+
             var placedGeometry = new THREE.BoxGeometry(this.dimension.width, this.dimension.height, this.dimension.depth);
             placedGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(this.dimension.width / 2, this.dimension.height / 2, this.dimension.depth / 2));
             var placedMesh = new THREE.Mesh(placedGeometry, this.material);
-            var choppedGeometry = new THREE.BoxGeometry(choppedDimensions.width, choppedDimensions.height, choppedDimensions.depth);
-            choppedGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(choppedDimensions.width / 2, choppedDimensions.height / 2, choppedDimensions.depth / 2));
-            var choppedMesh = new THREE.Mesh(choppedGeometry, this.material);
-            var choppedPosition = {
-                x: this.position.x,
-                y: this.position.y,
-                z: this.position.z
-            };
-            if (this.position[this.workingPlane] < this.targetBlock.position[this.workingPlane]) {
-                this.position[this.workingPlane] = this.targetBlock.position[this.workingPlane];
-            }
-            else {
-                choppedPosition[this.workingPlane] += overlap;
-            }
-            placedMesh.position.set(this.position.x, this.position.y, this.position.z);
-            choppedMesh.position.set(choppedPosition.x, choppedPosition.y, choppedPosition.z);
-            blocksToReturn.placed = placedMesh;
-            if (!blocksToReturn.bonus)
+
+            // Если не бонус — создаём "отрезанный" кусок
+            if (!blocksToReturn.bonus && choppedDimensions[this.workingDimension] > 0) {
+                var choppedGeometry = new THREE.BoxGeometry(choppedDimensions.width, choppedDimensions.height, choppedDimensions.depth);
+                choppedGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(choppedDimensions.width / 2, choppedDimensions.height / 2, choppedDimensions.depth / 2));
+                var choppedMesh = new THREE.Mesh(choppedGeometry, this.material);
+
+                var choppedPosition = { x: this.position.x, y: this.position.y, z: this.position.z };
+                if (this.position[this.workingPlane] < this.targetBlock.position[this.workingPlane]) {
+                    this.position[this.workingPlane] = this.targetBlock.position[this.workingPlane];
+                } else {
+                    choppedPosition[this.workingPlane] += overlap;
+                }
+
+                choppedMesh.position.set(choppedPosition.x, choppedPosition.y, choppedPosition.z);
                 blocksToReturn.chopped = choppedMesh;
-        }
-        else {
+            }
+
+            placedMesh.position.set(this.position.x, this.position.y, this.position.z);
+            blocksToReturn.placed = placedMesh;
+
+        } else {
             this.state = this.STATES.MISSED;
         }
+
         this.dimension[this.workingDimension] = overlap;
         return blocksToReturn;
     };
