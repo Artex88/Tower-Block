@@ -19,10 +19,13 @@ var Stage = /** @class */ (function () {
             alpha: false
         });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setClearColor('#D0CBC7', 1);
         this.container.appendChild(this.renderer.domElement);
         // scene
         this.scene = new THREE.Scene();
+        const loader = new THREE.TextureLoader();
+        loader.load('background.jpg', (texture) => {
+            this.scene.background = texture;
+        });
         // camera
         var aspect = window.innerWidth / window.innerHeight;
         var d = 20;
@@ -280,6 +283,13 @@ var Game = /** @class */ (function () {
             TweenLite.to(newBlocks.chopped.position, 1, positionParams);
             TweenLite.to(newBlocks.chopped.rotation, 1, rotationParams);
         }
+        var currentScore = parseInt(this.scoreContainer.innerHTML);
+        if (newBlocks.bonus) {
+            currentScore += 2;
+        } else {
+            currentScore += 1;
+        }
+        this.scoreContainer.innerHTML = String(currentScore);
         this.addBlock();
     };
     Game.prototype.addBlock = function () {
@@ -287,7 +297,6 @@ var Game = /** @class */ (function () {
         if (lastBlock && lastBlock.state == lastBlock.STATES.MISSED) {
             return this.endGame();
         }
-        this.scoreContainer.innerHTML = String(this.blocks.length - 1);
         var newKidOnTheBlock = new Block(lastBlock);
         this.newBlocks.add(newKidOnTheBlock.mesh);
         this.blocks.push(newKidOnTheBlock);
