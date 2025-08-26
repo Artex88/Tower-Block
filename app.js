@@ -1,3 +1,4 @@
+
 console.clear();
 var Stage = /** @class */ (function () {
     function Stage() {
@@ -19,15 +20,10 @@ var Stage = /** @class */ (function () {
             alpha: false
         });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setClearColor('#D0CBC7', 1);
         this.container.appendChild(this.renderer.domElement);
         // scene
         this.scene = new THREE.Scene();
-        const loader = new THREE.TextureLoader();
-        loader.load('/Tower-Block/background.jpg', function(texture) {
-            _this.scene.background = texture; 
-        }, undefined, function(err) {
-            console.error('Ошибка загрузки фона:', err);
-        });
         // camera
         var aspect = window.innerWidth / window.innerHeight;
         var d = 20;
@@ -118,7 +114,7 @@ var Block = /** @class */ (function () {
             plane: this.workingPlane,
             direction: this.direction
         };
-        if (this.dimension[this.workingDimension] - overlap < 0.5) {
+        if (this.dimension[this.workingDimension] - overlap < 0.3) {
             overlap = this.dimension[this.workingDimension];
             blocksToReturn.bonus = true;
             this.position.x = this.targetBlock.position.x;
