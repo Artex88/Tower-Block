@@ -118,7 +118,7 @@ var Block = /** @class */ (function () {
             plane: this.workingPlane,
             direction: this.direction
         };
-        if (this.dimension[this.workingDimension] - overlap < 0.3) {
+        if (this.dimension[this.workingDimension] - overlap < 0.5) {
             overlap = this.dimension[this.workingDimension];
             blocksToReturn.bonus = true;
             this.position.x = this.targetBlock.position.x;
